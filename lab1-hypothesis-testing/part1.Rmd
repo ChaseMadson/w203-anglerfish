@@ -19,7 +19,7 @@ library(tidyverse)
 
 ### 1.1.1 Type I Error Rate
 
-> **Question**: What is the type I error rate of the test?
+> **Question**: *What is the type I error rate of the test?*
 
 a.  Let's denote the test statistic $t$ with the given formula $t = X_1 + Y_1 + X_2 + Y_2 + X_3 + Y_3$.
 
@@ -71,7 +71,7 @@ $$
 
 ### 1.1.2 Power
 
-> **Question**: What is the power of your test for the alternative hypothesis that $p = \frac{3}{4}$
+> **Question**: *What is the power of your test for the alternative hypothesis that $p = \frac{3}{4}$*
 
 a.  The power of this test is $1 - \beta$, where $\beta$ is the type II error rate (i.e., the probability that we fail to reject $H_0$ when it is false). Specifically, we want to calculate the power under the alternative hypothesis $H_a: p = \frac{3}{4}$.
 
@@ -106,38 +106,47 @@ $$
 
 # 1.2 Wrong Test, Right Data
 
-Imagine that your organization surveys a set of customers to see how much they like your regular website, and how much they like your mobile website. Suppose that both of these preference statements are measured on 5-point Likert scales.
+*Imagine that your organization surveys a set of customers to see how much they like your regular website, and how much they like your mobile website. Suppose that both of these preference statements are measured on 5-point Likert scales.*
 
 ## 1.2.1 Violating t-test Assumptions
 
-> **Question**: If you were to run a paired t-test using this data, what consequences would the violation of the metric scale assumption have for your interpretation of the test results?
+> **Question**: *If you were to run a paired t-test using this data, what consequences would the violation of the metric scale assumption have for your interpretation of the test results?*
 
+For the results of a t-test on some sample to be reliable, then each draw from the sample must come from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric. As the preference statements in this survey are each measured on a 5-point Likert-scale, we know that this assumption is violated.
 
+Running a paired t-test on Likert-scale data means calculating the test statistic $t=\frac{\bar{X}-\mu_0}{s/\sqrt{n}}$, which gives us the difference from the mean in units of standard deviation. These units lose their meaning when calculated using Likert-scale data; it doesn't make sense to subtract or take a mean of these values. This is because data from Likert-scale have **non-standard intervals**, are **categorical instead of** **continuous**, and have **incomparable** **magnitudes** as values are subjective to each customer in the sample (a "very good" from one person can mean something different than another person's "very good"). Therefore, our interpretation of the test statistic would be invalid and so would be any conclusions we draw from it.
 
-To begin, the first assumption for a paired t-test is that the data must be metric. As the performance statements in this survey are measured using Likert-scales, we know that this assumption is violated. Data from Likert-scales have non-standard intervals, are not continuous, and the magnitudes for the values can be different for each value in the sample (a "Very good" from one person can mean something different than another person's "very good"). Therefore, without even looking at the other assumptions, we already know that the paired t-test is inappropriate for this data.
+## 1.2.2 Remedial Measure
 
-Ordinal data can only be used to do order statistics, not to calculate values such as $\mu$, $\sigma$, $\varepsilon$, or a t-statistic. The consequence of running the suggested paired t-test using ordinal data is that all findings and interpretations would be invalid.
+> **Question**: *What would you propose to do to remedy this problem?*
 
-The other main assumptions for a paired t-test are as follows:
+Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently. 
 
--   There is a natural dependency between observations
--   I.I.D. data across samples ($(X_i, Y_i)$ is drawn from the same distribution, independently of all other pairs)
--   Sample size of at least 30, $n \geq 30$, and not too much skew so that CLT can be applied
+The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling). 
 
-## 1.2.2 Remedial Measures
-
-> **Question**: What would you propose to do to remedy this problem?
-
-The data contains paired values but is not metric, which would encourage a Sign Test to be used to evaluate this data. If the test could not be changed, the data could be converted into a $0/1$ binary data set. Binary data is metric and thus a paired t-test would then be appropriate.
-
+\newpage
 
 # 1.3 Test Assumptions
 
 ## 1.3.1 World Happiness
 
+> **Assumptions**: In order to run a paired t-test on some sample $\{X_i\}_{i=1}^n$ and receive reliable results, there are 3 assumptions that must be met.
+
+1.  Each $X_i$ comes from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric.
+
+2.  $\{X_i\}_{i=1}^n$ is an **independent and identically distributed** random sample.
+
+3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2$
+
+    -   With sufficiently large n (e.g., surveying at least 30 customers), this assumption is met asymptotically since the Central Limit Theorem will cause a normal distribution of the mean.
+
+> **Violations**:
+
 ```{r}
 2 + 2
 ```
+
+\newpage
 
 ## 1.3.2 Legislators
 
@@ -145,11 +154,15 @@ The data contains paired values but is not metric, which would encourage a Sign 
 2 + 2
 ```
 
+\newpage
+
 ## 1.3.3 Wine and Health
 
 ```{r}
 2 + 2
 ```
+
+\newpage
 
 ## 1.3.4 Attitudes Toward the Religious
 
