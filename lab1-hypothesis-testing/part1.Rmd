@@ -1,0 +1,158 @@
+---
+title: 'Part 1: Foundational Exercises'
+subtitle: 'Lab 1: Hypothesis Testing - W203 Section 8'
+author: 'Team Anglerfish: Aruna Bisht, Jing Lange, Chase Madson, Maria Manna' 
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r Setup, include=FALSE}
+library(tidyverse)
+
+```
+
+\newpage
+
+# 1.1 Professional Magic
+
+### 1.1.1 Type I Error Rate
+
+> **Question**: What is the type I error rate of the test?
+
+a.  Let's denote the test statistic $t$ with the given formula $t = X_1 + Y_1 + X_2 + Y_2 + X_3 + Y_3$.
+
+b.  The type I error rate $\alpha$ is the probability that we incorrectly reject the null hypothesis $H_0 : p=\frac{1}{2}$. In our test, we reject the null hypothesis when the test statistic is either zero or six.
+
+$$
+\begin{aligned}
+\alpha &= Pr(H_0\text{ is rejected when it is true}) \\
+       &= Pr(t \in \{0, 6\}\,|\,p=\frac{1}{2}) \\
+\end{aligned}
+$$
+
+c.  We can rearrange $t=0$ as 3 consecutive flips of $(X_i, Y_i) = (0, 0)$, and similarly $t=1$ as $(X_i, Y_i) = (1, 1)$. We note that there is ${6 \choose 0} = 1$ way of observing $t = 0$ and ${6 \choose 6} = 1$ way of observing $t = 1$.
+
+$$
+\begin{aligned}
+       &= {6 \choose 0}Pr([(X_1, Y_1) = (0, 0)] \cap [(X_2, Y_2) = (0, 0)] \cap [(X_3, Y_3) = (0, 0)]\,|\,p=\frac{1}{2}) \\
+       &+ {6 \choose 6}Pr([(X_1, Y_1) = (1, 1)] \cap [(X_2, Y_2) = (1, 1)] \cap [(X_3, Y_3) = (1, 1)]\,|\,p=\frac{1}{2}) \\
+\end{aligned}
+$$
+
+d.  Given that each flip of the pair is independent of all other flips of the pair, we can restate as the product of probabilities.
+
+$$
+\begin{aligned}
+       &= Pr([(X_1, Y_1) = (0, 0)]\,|\,p=\frac{1}{2})\times Pr([(X_2, Y_2) = (0, 0)]\,|\,p=\frac{1}{2})\times Pr([(X_3, Y_3) = (0, 0)\,|\,p=\frac{1}{2}) \\
+       &+ Pr([(X_1, Y_1) = (1, 1)]\,|\,p=\frac{1}{2})\times Pr([(X_2, Y_2) = (1, 1)]\,|\,p=\frac{1}{2})\times Pr([(X_3, Y_3) = (1, 1)\,|\,p=\frac{1}{2})
+\end{aligned}
+$$
+
+e.  We express this in terms of the joint distribution functions we are given.
+
+$$
+\begin{aligned}
+       &= (f_{X, Y|p=\frac{1}{2}}(0, 0))^3 + (f_{X, Y|p=\frac{1}{2}}(1, 1))^3
+\end{aligned}
+$$
+
+f.  When $p = \frac{1}{2}$, then $f_{X_i, Y_i}(0, 0) = f_{X_i, Y_i}(1, 1) = \frac{\frac{1}{2}}{2}=\frac{1}{4}$, and thus we plug that probability into the above.
+
+$$
+\begin{aligned}
+       &= (\frac{1}{4})^3 + (\frac{1}{4})^3 \\
+       &= \bf{\frac{1}{32}= 0.03125}
+\end{aligned}
+$$
+
+\newpage
+
+### 1.1.2 Power
+
+> **Question**: What is the power of your test for the alternative hypothesis that $p = \frac{3}{4}$
+
+a.  The power of this test is $1 - \beta$, where $\beta$ is the type II error rate (i.e., the probability that we fail to reject $H_0$ when it is false). Specifically, we want to calculate the power under the alternative hypothesis $H_a: p = \frac{3}{4}$.
+
+$$
+\begin{aligned}
+Power  &= 1 - \beta \\
+       &= 1 - Pr(\text{Fail to reject } H_0\text { when  } H_a \text{ is true instead}) \\
+       &= 1 - Pr(t \notin \{0, 6\}\,|\,H_a: p = \frac{3}{4}) \\
+       &= 1 - [1 - Pr(t \in \{0, 6\}\,|\,H_a: p = \frac{3}{4})] \\
+       &= Pr(t \in \{0, 6\}\,|\,H_a: p = \frac{3}{4})
+\end{aligned}
+$$
+
+b.  We repeat our steps c, d, and e from our solution to 1.1.1 above to reach the joint probability density function when $p = \frac{3}{4}$.
+
+$$
+\begin{aligned}
+       &= (f_{X, Y|p=\frac{3}{4}}(0, 0))^3 + (f_{X, Y|p=\frac{3}{4}}(1, 1))^3
+\end{aligned}
+$$
+
+c.  When $p = \frac{3}{4}$, then $f_{X_i, Y_i}(0, 0) = f_{X_i, Y_i}(1, 1) = \frac{\frac{3}{4}}{2}=\frac{3}{8}$, and thus we plug that probability into the above.
+
+$$
+\begin{aligned}
+       &= (\frac{3}{8})^3 + (\frac{3}{8})^3 \\
+       &= \bf{\frac{27}{256}= 0.10546875}
+\end{aligned}
+$$
+
+\newpage
+
+# 1.2 Wrong Test, Right Data
+
+Imagine that your organization surveys a set of customers to see how much they like your regular website, and how much they like your mobile website. Suppose that both of these preference statements are measured on 5-point Likert scales.
+
+## 1.2.1 Violating t-test Assumptions
+
+> **Question**: If you were to run a paired t-test using this data, what consequences would the violation of the metric scale assumption have for your interpretation of the test results?
+
+
+
+To begin, the first assumption for a paired t-test is that the data must be metric. As the performance statements in this survey are measured using Likert-scales, we know that this assumption is violated. Data from Likert-scales have non-standard intervals, are not continuous, and the magnitudes for the values can be different for each value in the sample (a "Very good" from one person can mean something different than another person's "very good"). Therefore, without even looking at the other assumptions, we already know that the paired t-test is inappropriate for this data.
+
+Ordinal data can only be used to do order statistics, not to calculate values such as $\mu$, $\sigma$, $\varepsilon$, or a t-statistic. The consequence of running the suggested paired t-test using ordinal data is that all findings and interpretations would be invalid.
+
+The other main assumptions for a paired t-test are as follows:
+
+-   There is a natural dependency between observations
+-   I.I.D. data across samples ($(X_i, Y_i)$ is drawn from the same distribution, independently of all other pairs)
+-   Sample size of at least 30, $n \geq 30$, and not too much skew so that CLT can be applied
+
+## 1.2.2 Remedial Measures
+
+> **Question**: What would you propose to do to remedy this problem?
+
+The data contains paired values but is not metric, which would encourage a Sign Test to be used to evaluate this data. If the test could not be changed, the data could be converted into a $0/1$ binary data set. Binary data is metric and thus a paired t-test would then be appropriate.
+
+
+# 1.3 Test Assumptions
+
+## 1.3.1 World Happiness
+
+```{r}
+2 + 2
+```
+
+## 1.3.2 Legislators
+
+```{r}
+2 + 2
+```
+
+## 1.3.3 Wine and Health
+
+```{r}
+2 + 2
+```
+
+## 1.3.4 Attitudes Toward the Religious
+
+```{r}
+2 + 2
+```
