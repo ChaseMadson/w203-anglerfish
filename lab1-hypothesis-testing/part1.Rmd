@@ -10,6 +10,7 @@ output:
 
 ```{r Setup, include=FALSE}
 library(tidyverse)
+library(janitor)
 
 ```
 
@@ -116,19 +117,7 @@ For the results of a t-test on some sample to be reliable, then each draw from t
 
 Running a paired t-test on Likert-scale data means calculating the test statistic $t=\frac{\bar{X}-\mu_0}{s/\sqrt{n}}$, which gives us the difference from the mean in units of standard deviation. These units lose their meaning when calculated using Likert-scale data; it doesn't make sense to subtract or take a mean of these values. This is because data from Likert-scale have **non-standard intervals**, are **categorical instead of** **continuous**, and have **incomparable** **magnitudes** as values are subjective to each customer in the sample (a "very good" from one person can mean something different than another person's "very good"). Therefore, our interpretation of the test statistic would be invalid and so would be any conclusions we draw from it.
 
-## 1.2.2 Remedial Measure
-
-> **Question**: *What would you propose to do to remedy this problem?*
-
-Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently. 
-
-The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling). 
-
-\newpage
-
-# 1.3 Test Assumptions
-
-## 1.3.1 World Happiness
+*Optional Supplement to our Response*
 
 > **Assumptions**: In order to run a paired t-test on some sample $\{X_i\}_{i=1}^n$ and receive reliable results, there are 3 assumptions that must be met.
 
@@ -138,13 +127,51 @@ The assumptions required under this test are that the data must follow an ordina
 
 3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2$
 
-    -   With sufficiently large n (e.g., surveying at least 30 customers), this assumption is met asymptotically since the Central Limit Theorem will cause a normal distribution of the mean.
+## 1.2.2 Remedial Measure
 
-> **Violations**:
+> **Question**: *What would you propose to do to remedy this problem?*
+
+Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently. 
+
+The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling). 
+
+*Do we want to propose converting the data from Likert-scale to binary?*
+
+
+\newpage
+
+# 1.3 Test Assumptions
+
+*Evaluate the assumptions for each of the following tests.*
+
+## 1.3.1 World Happiness
+
+Load the Data
 
 ```{r}
-2 + 2
+happiness_WHR <- 
+  'happiness_WHR.csv' %>% 
+  read_csv(col_types = 'ciddddddddd') %>% 
+  clean_names()
+
+happiness_WHR
+
 ```
+
+```{r}
+happiness_WHR %>%
+  #filter(!is.na(log_gdp_per_capita)) %>% 
+  mutate(above_average_gpd = 
+           (log_gdp_per_capita >= mean(log_gdp_per_capita, na.rm = TRUE)) %>%
+           ifelse('Above Average GDP', 'Below Average GDP')) %>% 
+  ggplot(mapping = aes(x = above_average_gpd, y = life_ladder)) + 
+  geom_boxplot() + 
+  labs(title = 'Box-Plots Comparing Above and Below Average GDP Countries', 
+       x = '',
+       y = 'Life Ladder Scale')
+
+```
+
 
 \newpage
 
@@ -169,3 +196,18 @@ The assumptions required under this test are that the data must follow an ordina
 ```{r}
 2 + 2
 ```
+
+
+
+> **Assumptions**: In order to run a paired t-test on some sample $\{X_i\}_{i=1}^n$ and receive reliable results, there are 3 assumptions that must be met.
+
+1.  Each $X_i$ comes from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric.
+
+2.  $\{X_i\}_{i=1}^n$ is an **independent and identically distributed** random sample.
+
+3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2$
+
+    -   With sufficiently large n (e.g., surveying at least 30 customers), this assumption is met asymptotically since the Central Limit Theorem will cause a normal distribution of the mean.
+
+> **Violations**:
+
