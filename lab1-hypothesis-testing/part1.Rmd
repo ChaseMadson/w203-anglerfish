@@ -72,7 +72,7 @@ $$
 
 ### 1.1.2 Power
 
-> **Question**: *What is the power of your test for the alternative hypothesis that $p = \frac{3}{4}$*
+> **Question**: *What is the power of your test for the alternative hypothesis that* $p = \frac{3}{4}$
 
 a.  The power of this test is $1 - \beta$, where $\beta$ is the type II error rate (i.e., the probability that we fail to reject $H_0$ when it is false). Specifically, we want to calculate the power under the alternative hypothesis $H_a: p = \frac{3}{4}$.
 
@@ -125,18 +125,17 @@ Running a paired t-test on Likert-scale data means calculating the test statisti
 
 2.  $\{X_i\}_{i=1}^n$ is an **independent and identically distributed** random sample.
 
-3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2$
+3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2)$
 
 ## 1.2.2 Remedial Measure
 
 > **Question**: *What would you propose to do to remedy this problem?*
 
-Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently. 
+Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently.
 
-The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling). 
+The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling).
 
 *Do we want to propose converting the data from Likert-scale to binary?*
-
 
 \newpage
 
@@ -146,24 +145,27 @@ The assumptions required under this test are that the data must follow an ordina
 
 ## 1.3.1 World Happiness
 
-Load the Data
+> **Instructions**: *List all assumptions for a **two-sample t-test**. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.*
+
+Our data comes from the [World Happiness Report](https://worldhappiness.report/archive/) taken between 2019-2020 for a sample of countries, and specifically we are interested in the Cantril Life Ladder and GDP fields.
 
 ```{r}
 happiness_WHR <- 
   'happiness_WHR.csv' %>% 
   read_csv(col_types = 'ciddddddddd') %>% 
-  clean_names()
-
-happiness_WHR
-
-```
-
-```{r}
-happiness_WHR %>%
-  #filter(!is.na(log_gdp_per_capita)) %>% 
+  clean_names() %>% 
   mutate(above_average_gpd = 
            (log_gdp_per_capita >= mean(log_gdp_per_capita, na.rm = TRUE)) %>%
-           ifelse('Above Average GDP', 'Below Average GDP')) %>% 
+           ifelse('Above Average GDP', 'Below Average GDP') %>% 
+           factor(levels = c('Below Average GDP', 'Above Average GDP'))) %>% 
+    select(country_name, year, life_ladder, above_average_gpd)
+
+happiness_WHR %>% 
+  group_by(above_average_gpd) %>% 
+  summarise(mean_life_ladder = mean(life_ladder), 
+            observations = n())
+
+happiness_WHR %>%
   ggplot(mapping = aes(x = above_average_gpd, y = life_ladder)) + 
   geom_boxplot() + 
   labs(title = 'Box-Plots Comparing Above and Below Average GDP Countries', 
@@ -172,6 +174,97 @@ happiness_WHR %>%
 
 ```
 
+Let $\{X_i\}_{i\in[1, 105]}$ represent the 105 *life_ladder* observations for **below average** GDP countries in the sample, giving us $\bar{X} = 4.924581$.
+
+Let $\{Y_i\}_{i\in[1, 121]}$ represent the 121 *life_ladder* observations for **above average** GDP countries in the sample, giving us $\bar{Y} = 6.355488$.
+
+We want to consider running a Welch's two-sample t-test that compares the mean of sample $\bar{X}$ against $\bar{Y}$.
+
+**Assumptions**: In order to get reliable results from this test, there are 3 assumptions that must be met.
+
+1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **metric** in scale, meaning they are continuous and numeric.
+
+    -   From the summary table below, we see that life_ladder is precise to the third decimal point, and thus does not consist of whole-numbered values. This is characteristic for continuous variables.
+        -   Note: The life_ladder variable we see in the data appears to be averages of Cantril ladder responses aggregated to the country-level.
+
+    ```{r}
+    happiness_WHR %>%
+      pull(life_ladder) %>% 
+      summary()
+      
+    ```
+
+    -   We see below that we observe duplicate values in less than 5% of the life_ladder observations. This is characteristic for continuous variables.
+
+    ```{r}
+    happiness_WHR %>%
+      summarise(pct_distinct_life_ladder = (n_distinct(life_ladder) / n()) %>% 
+                                              scales::percent(0.1))
+
+    ```
+
+    -   However, we note that individual Cantril ladder responses are based on subjective 11-point scale. Though the respondants are asked to imagine fixed-interval spacing between each step of the ladder, it is not clear that this satisfactorily approximates the standard interval requirement of metric scales. Even though we are working with country-level averages, we conclude that **the life_ladder variable does not meet the metric scale requirement** since the distance between each scalar value cannot be linearly measured.
+
+![Cantril Scale Visualized. Source: Sawatzky et al. (e.g., 2010), http://www.hqlo.com/content/8/1/17](cantril_ladder.png)
+
+2.  $\{X_i\}_{i\in[1, 105]}$ and $\{Y_i\}_{i\in[1, 121]}$ are **independent and identically distributed** random samples.
+
+    -   One reason to doubt the independence of these samples is that **many countries appear twice in this data** for their annual values observed in 2019 and 2020. It is safe to assume that a country's observed value for one year is correlated with its values from previous years (i.e., **autocorrelation**). Therefore, we are not working with a true random sample.
+
+    ```{r}
+    happiness_WHR %>%
+      select(-above_average_gpd) %>%
+      pivot_wider(names_from = year, values_from = life_ladder) %>% 
+      filter(!is.na(`2020`)) %>% 
+      slice(1:5)
+
+    ```
+    -   Another reason to doubt the independence of these samples is that **some groups of countries could be correlated based on geographic cluster**. For example, we can select a few European and South American countries and then compare their average life_ladder to see what may be a significant difference in averages. 
+    
+    ```{r}
+    happiness_WHR %>% 
+      mutate(continent = 
+               case_when(country_name %in% c('France', 'United Kingdom',
+                                             'Germany', 'Belgium', 
+                                             'Finland') ~ 'Europe',
+                         country_name %in% c('Brazil', 'Bolivia',
+                                             'Chile', 'Colombia',
+                                             'Uruguay') ~ 'South America')) %>% 
+      filter(!is.na(continent)) %>% 
+      group_by(continent) %>% 
+      summarise(mean(life_ladder))
+    
+    ```
+    
+    
+    -   As the data is ordinal and not metric, the CLT does not apply and there is not an obvious way to compare distributions from the variables to confirm whether they are identically distributed.
+
+3.  $\{X_i\}_{i\in[1, 105]}$ and $\{Y_i\}_{i\in[1, 121]}$ are **normally distributed**, or the sample size is large enough to approximate normality due to the CLT (assuming no severe skewness). 
+
+    -   We more than satisfy the $n>30$ rule-of-thumb for minimum sample size. 
+    
+    -   The raw distributions of life_ladder within each group show no noticeable deviations from normality.   
+
+    ```{r}
+    happiness_WHR %>%
+      filter(!is.na(above_average_gpd)) %>% 
+      ggplot(mapping = aes(x = life_ladder)) + 
+      geom_histogram(bins = 20) + 
+      labs(title = 'Histogram of Cantril Ladder Responses',
+           subtitle = 'Averages Responses Aggregated to the Country Level', 
+           x = 'Average Cantril Life Ladder Response', 
+           y = 'Number of Observations') + 
+      facet_wrap(~above_average_gpd)
+
+    ```
+
+    -   However, the data is ordinal so sample size does not matter; the CLT cannot be applied. 
+    
+Additionally, data used for two-sample t-tests should:
+
+-   Have a grouping variable that is defined and present. In this case, the grouping variable is GDP (low GDP and high GDP) so this condition is met.
+
+-   Have distributions of X and Y that are both normal and have equal variance for each group. With ordinal data, normality cannot exist; the data is nonparametric. Additionally, even if the CLT was able to be applied to the data, our main concern would be that there is strong skewness with a small sample. We know that the CLT guarantees normality for large samples. However, the sample size in this study is less than 30 countries. Therefore, even if the data were metric, the CLT is not necessarily applicable and normality cannot be assumed.
 
 \newpage
 
@@ -197,8 +290,6 @@ happiness_WHR %>%
 2 + 2
 ```
 
-
-
 > **Assumptions**: In order to run a paired t-test on some sample $\{X_i\}_{i=1}^n$ and receive reliable results, there are 3 assumptions that must be met.
 
 1.  Each $X_i$ comes from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric.
@@ -210,4 +301,3 @@ happiness_WHR %>%
     -   With sufficiently large n (e.g., surveying at least 30 customers), this assumption is met asymptotically since the Central Limit Theorem will cause a normal distribution of the mean.
 
 > **Violations**:
-
