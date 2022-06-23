@@ -1,0 +1,459 @@
+---
+title: 'Lab 1: Hypothesis Testing'
+author: "w203 Teaching Team"
+output:
+  pdf_document:
+    toc: no
+    number_sections: yes
+  html_document:
+    toc: no
+    df_print: paged
+  word_document:
+    toc: no
+urlcolor: blue
+---
+
+This is a team-based lab.  Your instructor will divide you into teams of three, or possibly four students. To maximize learning, we would like all students to engage with every lab component, discussing strategy with teammates, reviewing solutions, and iterating on text and code.
+
+The lab consists of two parts.  Part one consists of foundation exercises similar to a homework.  Part two is a written statistical analysis.
+
+This lab is due June 28 at 2pm Berkeley time.  You will find a separate place on Gradescope to submit each part. Please submit your `.Rmd` file, as well as your `.pdf` file. This is a team submission, so one person from your team should submit the teams' work, and associate the other members of the team with the submission (this is intuitive on Gradescope.)
+
+\tableofcontents
+\newpage
+
+# Part 1: Foundational Exercises
+## Professional Magic 
+
+Your aunt (who is a professional magician), claims to have created a pair of magical coins that share a  connection to each other that makes them land in the same way.  The coins are always flipped at the same time.  For a given flip $i \in \{1,2,3...\}$, let $X_i$ be a Bernoulli random variable representing the outcome of the first coin, and let $Y_i$ be a Bernoulli random variable representing the outcome of the second coin.  You assume that each flip of the pair is independent of all other flips of the pair. For all $i$, you also assume that $X_i$ and $Y_i$ have the joint distribution given in the following table.
+
+\begin{center}
+\begin{tabular}{ c | c | c }
+& $X_i = 0$ & $X_i=1$ \\
+\hline
+$Y_i = 0$ & $p/2$    & $(1-p)/2$ \\
+$Y_i = 1$ & $(1-p)/2$    & $p/2$ \\
+\end{tabular}
+\end{center}
+
+$p \in [0,1]$ is a parameter. 
+
+Each flip of the pair is independent of all other flips of the pair. This means that whatever happens the first time that you flip both of the coins tells you nothing about the second time that you flip both of the coins, and so on. Essentially, this is a statement about the limits of your aunt's magic.
+
+You design the following test to evaluate your aunt's claim:  You flip the coins three times, and write down that your test statistic is the sum $X_1 + Y_1 + X_2 + Y_2 + X_3 + Y_3$. That is, your test statistic is essentially the number of heads that are shown. 
+
+Your null hypothesis is that $p=1/2$, and you plan to reject the null if your test statistic is 0 or 6. 
+
+1. What is the type 1 error rate of your test?
+2. What is the power of your test for the alternate hypothesis that $p=3/4$?
+
+\newpage
+## Wrong Test, Right Data
+Imagine that your organization surveys a set of customers to see how much they like your regular website, and how much they like your mobile website. Suppose that both of these preference statements are measured on 5-point Likert scales.
+
+A Likert scale is one where a person is provided ordered categories that range from lowest to highest. You can read more about them in this seminal research design text by [Fowler](https://www.amazon.com/Survey-Research-Methods-Applied-Social/dp/1452259003/ref=sr_1_2?crid=2YVDNQW6HX5BZ&keywords=fowler+survey+research+methods&qid=1644867641&sprefix=fowler+survey+%2Caps%2C166&sr=8-2), or this brief [overview](https://www.simplypsychology.org/likert-scale.html). 
+If you were to run a paired t-test using this data, what consequences would the violation of the metric scale assumption have for your interpretation of the test results? What would you propose to do to remedy this problem? 
+
+
+```{r}
+##**Answer.1.2.**: 
+#Given: In given dataset, the response variable is the likert scale here. Likert scale is five point scale which is used to allow individual to express how much they like the website e.g.excellent, good, fair, poor, very poor. 
+
+# Basic assumption of Paired T-test is:
+# (i) Metric Scale - response or dependent variable has to be metric or continous (interval or ratio) . The data should support addition, subtraction, multiplication, addition and division. The data should support mean and variance computation (ii) Data has to be IID.
+
+
+
+# Conclusion:  
+# (i)So, as seen from the basic assumptions and given dataset, clearly response variable is not the metric variable because the basic deifnition of metric variable is that distance between values are equal. However, the NO concept of distance between excellent and good or fair and poor.   Also, values of the likert scale  can not be added, subtracted multiplied or divided and can't compute means either. Hence this violates the basic assumption of paired T test.So paired T test is not the approriate test here. (ii) also we don't know whether data is IID.
+
+#Solution:
+# for this problem is that perhaps we can convert the likert scale into binary measurement like yes & no OR 1&2. Example -  representing whether they like the website 'yes' or whether they don't like the website 'no'. So after converting likert scale into binary data then we may be able to do a parametric two paired T-test, provided if data is IID.
+
+#Paired T-test not possible
+
+
+```
+
+
+\newpage
+## Test Assumptions
+
+For the four following questions, your task is to evaluate the assumptions for the given test. It is not enough to say that an assumption is met or not met; instead, present your evidence in the form of background knowledge, visualizations, and numerical summaries. If you produce a histogram as part of your evaluation, be sure to consider what the most appropriate bin width is. The test that we ask you to evaluate may or may not be the most appropriate test for the scenario.  Because the goal of this task is to evaluate whether the data satisfies the assumptions necessary for the test to provide meaningful results, you do not need perform the test (you may perform the test, but we will not be marking for the test results).
+
+### World Happiness
+The file [`datasets/Happiness_WHR.csv`](./datasets/happiness_WHR.csv) is subsetted from the World Happiness Report, a yearly publication that uses data from the Gallup World Poll surveys.  The variable life ladder is a measure of happiness, described in the FAQ as follows: 
+
+> This is called the Cantril ladder: it asks respondents to think of a ladder, with the best possible life for them being a 10, and the worst possible life being a 0. They are then asked to rate their own current lives on that 0 to 10 scale. The rankings are from nationally representative samples, for the years 2018-2020.
+
+You would like to know whether people in countries with high GDP per capita (higher than the mean) are more happy or less happy than people in countries with low GDP (lower than the mean).
+
+List all assumptions for a two-sample t-test. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.
+
+```{r}
+# Given: (1) Response variable or dependent variable Y is Cantril life ladder on the scale of 0 to 10. (2) The independent variable is the grouping variable which is (a) high GDP per capita higher then mean and (b) low GDP lower then the mean.
+ 
+# Basic assumption of Two sample T-test is - 
+#(1)Metric Scale - response or dependent variable has to be metric or continous (interval or ratio) The data should support addition, subtraction, multiplication, addition and division. The data should support mean and variance computation (ii) Data has to be IID. (iii) No major deviation from normality.
+ 
+
+#Conclusion: 
+#(i)So, as seen from the basic assumptions and given dataset, clearly response variable Cantrol ladder is NOT the metric variable because the basic deifnition of metric variable is that distance between values are equal. However, we don't have enough information that distance between Cantril ladder 1 and 2 is same as distance between Cantril ladder 2 and 3. This Cantril ladder values is the average values at the country level on the scale of 1 to 10. 
+#(ii) Also data doesn't seem to be IID. The given data is at the country level. Published article shows that the happiness can be affected by the type of place or country. Example- economics conditions of certain country can drive the employment rate and opportunities and eventually individual happiness . We may experience clustering effect among developing countries versus developed countries.Sometime one country happiness may depend on other eg. Russia attcaked Ukraine which affected happiness of both countries .'
+
+#(iii) If response variable is non-metric then checking normality makes no sense.
+
+#Two sample T-test NOT possible
+
+
+```
+
+
+```{r}
+happiness=read.csv("happiness_WHR.csv",sep=",",header = TRUE)
+happiness
+```
+
+
+```{r}
+install.packages("moments")
+library(moments)
+```
+
+
+```{r}
+mean(!is.na(happiness$Log.GDP.per.capita))
+
+```
+
+
+```{r}
+happiness_high = happiness[(!is.na(happiness$Log.GDP.per.capita) >= 0.945606), ]
+happiness_low = happiness[(!is.na(happiness$Log.GDP.per.capita) < 0.945606), ]
+
+```
+
+
+```{r}
+install.packages("car")
+library("car")
+```
+
+
+```{r}
+qqPlot(!is.na(happiness_high$Log.GDP.per.capita))
+```
+```{r}
+hist(happiness_high$Life.Ladder)
+```
+
+
+### Legislators
+The file [`datasets/legislators-current.csv`](./datasets/legislators-current.csv) is taken from the [congress-legislators project](https://github.com/unitedstates/congress-legislators) on Github.  You would like to test whether Democratic or Republican senators are older.
+
+List all assumptions for a Wilcoxon rank-sum test (using the Hypothesis of Comparisons). Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.
+
+```{r}
+# Given: The response variable  or dependent variabe is Age. The independent variable  is the grouping variable party democrat or republican.
+ 
+# Assumptions of Wilcox Rank Sum test:
+#(i) Ordinal scale
+#(ii) IID data - each $X$ is drawn from same distribution and each $y$ is drawn from the same distribution and $X_i$ and $Y_i$ are mutually independent
+
+  
+
+#Conclusion:
+#(i) The response variable or dependent variable is Age is a metric variable because it's continuous variable as seen from the plot. Also the difference between the 20 and 25 is same as the difference between 30 and 35.
+#(ii)IID - it's not IID because there may be independence between groups X and Y, but within group X is not indepdendent. This is because many senators are from the same zip code and may be expected to be same and can have the geographical clustering effect. Example-  Some senator may immitate a particularly successful senator. 
+
+#Hence, signed rank sum test is NOT possible.
+
+```
+
+
+```{r}
+legislators=read.csv("legislators-current.csv",sep=",",header = TRUE)
+legislators
+```
+
+```{r}
+install.packages("date")
+library("date")
+```
+
+```{r}
+#legislators_age <- legislators[(as.Date(legislators$birthday , format = "%Y/%m/%d")) , ]
+#dates <- as.Date(legislators$birthday , format = "%Y/%m/%d")
+#str(dates)
+#legislators_age
+#legislators_age <- legislators[(legislators$birthday) , ]
+
+```
+```{r}
+#Important
+legislators$birthday <- as.Date(legislators$birthday)
+```
+
+
+```{r}
+install.packages("plyr")
+library("plyr")
+```
+
+
+```{r}
+install.packages("dplyr")
+library("dplyr")
+```
+
+```{r}
+legislators_age <- legislators%>%mutate(age = time_length(difftime(as.Date("2022-06-19"), legislators$birthday), "years"))
+
+legislators_age
+```
+```{r}
+install.packages("moments")
+library("moments")
+```
+
+
+```{r}
+
+# Age is continous variable as from plot
+qqPlot(legislators_age$age)
+```
+
+
+
+
+### Wine and health
+The dataset `wine` can be accessed by installing the `wooldridge` package.  
+
+    install.packages("wooldridge")
+    library(wooldridge)
+    ?wine
+    wine
+
+It contains observations of variables related to wine consumption for 21 countries.  You would like to use this data to test whether countries have more deaths from heart disease or from liver disease.
+
+List all assumptions for a signed-rank test. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.
+
+
+```{r}
+# Given:
+#   
+# Assumptions of Wilcox Signed Rank Test: 
+# (1) Metric Scale
+# (2) IID data
+# (3) The distribution of the difference $X - Y$ is symmetric around some mean $\mu$
+
+
+# Conclusion:
+# (1) Metric - response variable is number of deaths from liver and heart. As seen from the histogram, it's a metric variable,  a continous variable and countable variable. Also, the difference between 5 and 6 deaths is same as between 10 and 11 etc. It's sensible to subtract one value from another to compute the average number of deaths.
+# (2) IID - it may not be IID because of geographical clustering. Certain countries tend to drink more wine may be it'a fashion to drink wine through movies or music,  then other countries so those countries may be more prone to the heart or level disease comparitively, hence there is a geograhical clustering. Sometime certain individual are more genetically prone to disease and they may immigrate from one country  to a different country.
+# (3) As seen from the histogram, the distribution of the difference $X - Y$ is NOT symmetric around some mean $\mu$
+  
+ # Signed rank test is NOT possible
+```
+
+
+```{r}
+install.packages("wooldridge")
+library(wooldridge)
+```
+
+```{r}
+wine
+```
+```{r}
+hist(wine$heart)
+skewness(wine$heart, na.rm=T)
+```
+```{r}
+hist(wine$liver)
+skewness(wine$liver, na.rm=T)
+```
+
+```{r}
+install.packages("dplyr")
+```
+```{r}
+library(dplyr)
+```
+
+```{r}
+install.packages("moments")
+```
+```{r}
+library(moments)
+```
+
+
+
+
+
+
+```{r}
+wine_difference <- wine%>%mutate(wine_diff = wine$heart - wine$liver)
+wine_difference
+
+```
+
+
+```{r}
+
+hist(wine_difference$wine_diff)
+skewness(wine_difference$wine_diff , na.rm=T)
+
+```
+
+
+### Attitudes toward the religious
+The file [`datasets/GSS_religion`](./datasets/GSS_religion.csv) is a subset of data from the 2004 General Social Survey (GSS).  
+
+The variables `prottemp` and `cathtemp` are measurements of how a respondent feels towards protestants and towards Catholics, respectively.  The GSS questions are phrased as follows:
+
+> I'd like to get your feelings toward groups that are in the news these days. I will use something we call the feeling thermometer, and here is how it works: 
+> 
+> I'll read the names of a group and I'd like you to rate that group using the feeling thermometer. Ratings between 50 degrees and 100 degrees mean that you feel favorable and warm toward the group. Ratings between 0 degrees and 50 degrees mean that you don't feel favorable toward the group and that you don't care too much for that group. If we come to a group whose name you Don't recognize, you don't need to rate that group. Just tell me and we'll move on to the next one. If you do recognize the name, but you don't feel particularly warm or cold toward the group, you would rate the group at the 50 degree mark. 
+> 
+> How would you rate this group using the thermometer?
+
+You would like to test whether the US population feels more positive towards Protestants or towards Catholics.
+
+List all assumptions for a paired t-test. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries. 
+```{r}
+# Given: Response variable is protestants and catholic feeling measurement
+#   
+# Assumption of paired T test:
+# (1) Metric scale
+# (2) IID data - subset of data 2004 genetal social survey
+# (3) Distribution of difference between measurement has no major deviations from normality
+#   
+# Conclusion:
+
+# (1) The measurements are taken in the thermomemter scale is it's an ordinal scale for both observations of protestants and Catholics. There is no good way to know the difference between 30 and 40 is equilvalent to that between like 60 to 70. This is simlar to the likert scale.
+# (2) IID data - subset of data 2004 genetal social survey. We dont know how the survey was taken , there may be dependency between people who are participating in survey.
+# (3) Measurements are ordinal so distribution won't make sense
+# 
+# So, Paired T test may not be possible
+```
+
+
+
+```{r}
+
+GSS_religion =read.csv("GSS_religion.csv",sep=",",header = TRUE)
+GSS_religion
+
+```
+
+
+
+
+
+
+\newpage
+# Part 2: Statistical Analysis
+
+The American National Election Studies (ANES) conducts surveys of voters in the United States, with a flagship survey occurring immediately before and after each presidential election.  In this part, you will use the ANES data to address a question about voters in the US.  Your team will conduct a statistical analysis and generate a written report in pdf format.
+
+This is an exercise in both statistics and professional communication.  It is important that your techniques are properly executed; equally important is that your writing is clear and organized, and your argument well justified. 
+
+## Data 
+
+Data for the lab should be drawn from the 2020 American National Election Studies (ANES). You can access this data at [https://electionstudies.org](https://electionstudies.org). This is the official site of the ANES, a project that has [been ongoing since](https://en.wikipedia.org/wiki/American_National_Election_Studies) 1948, and federally funded by the National Science Foundation since 1977. 
+
+To access the data, you will need to register for an account, confirm this account, and then login. The data that you need should come from the **2020 Time Series Study**.
+
+You will note that there are two forms of data that are available, data that is stored in a `.dta` format, and data that is stored in a `.sav` format. Both of these are proprietary data formats (`.dta` for STATA, and `.sav` for SPSS). You will need to find an appropriate library to read this data into R; we recommend that you find a package that is within the "tidyverse". 
+
+While you're at the ANES website, you will also want to download the codebook, because all of the variables are marked as something like, `V200002` -- which isn't very descriptive without the codebook. 
+
+For a glimpse into some of the intricacies that go into the design of this study, take a look at the introduction to the codebook.  
+
+Like many modern surveys, the ANES includes survey weights, which are used to correct for situations in which members of one demographic group are more likely to respond to the survey than members of another demographic group. (The target proportions are ultimately based on US census data). The survey weights make it possible to generalize from the a population that represents people who take the survey to a population that represents the United States as a whole. These weights are beyond the scope of our class and you are not expected to utilize them. You will still be able to learn about a population model, even if applicability to the US population is limited.
+
+## The research question
+
+Use the ANES data to address the following question:
+
+> Did Democratic voters or Republican voters experience more difficulty voting in the 2020 election?
+
+## Guidance from political scientists 
+
+Political identification in the US is a complex phenomenon that is the topic of a large academic literature.  See `./background_literature/petrocik_2009.pdf` for some guidance about how stated political identity might not match with revealed political identity at the ballot box. 
+
+As practical guidance: 
+
+1. Is it reasonable to use the vote that someone cast to identify their party preference in this case? What if someone had so difficult a time voting that they did not cast a ballot? 
+2. Please treat individuals who "lean" in one direction or another as members of that party. This means that someone who "Leans Democratic" should be classified as as Democrat; and someone who "Leans Republican" should be classified as a Republican.
+
+## Report guidelines 
+
+This section provides some guidance for you as you write your report. In [`rubric.md`](./rubric.md) we provide you with specific statements of how we will evaluate your report.  
+
+## General guidance {-}
+- You should knit an .Rmd file to create your pdf report.
+- Your report should be no more than 3 pages in standard latex formatting (i.e. `output: pdf_document`)
+- You should assume your reader is familiar with statistics, but has no special knowledge of the ANES survey.
+- Your report should contain either a plot or a table that advances the argument. 
+
+## Introduction {-}
+- Begin your report with an introduction to motivate the analysis.
+- Introduce the topic area and explain why the research question is interesting.
+- The introduction must "do work," connecting the general topic to the specific techniques in the report.
+
+## Conceptualization and Operationalization {-} 
+How do you get from a research question to data? First, ensure that the concepts in your question are clear.
+
+- Who or what is a voter? 
+- Who is a "Republican" and who is a "Democrat"? 
+- What is difficulty voting? 
+
+Only after you have informed your reader of what these concepts are can you then describe how you are going to _measure_ these concepts.
+
+- What would be the best **possible** method of measuring this concept? Is this method possible? Why or why not? 
+- What is the best **available** method of measuring this concept? Why have you opted to use this measurement instead of other possibilities? Map the concept definitions that you have written down onto the variables that you are going to use. Describe, precisely, how the variables were generated, if they come from survey data, provide the text of the question that the respondent is reacting to, not the variable name. 
+- What, if any, changes have you made to the dataset from how it was provided? Why did you make those changes, how much data was affected, and what are the consequences for any estimates that you produce? 
+  
+## Visual Design {-}
+- Any plots or tables that you include must follow basic principles of visual design.
+  - A plot/figure must have a title that is informative.
+  - Variables must be labeled in plain language. As an example, `v20002` does not work for a label.
+  - A plot should have a good ratio of information to ink / space on the page.  Do not select a large or complicated plot when a simple table conveys the same information directly.
+- Do not include any plot (or R output in general) that you do not discuss in your narrative.
+- The code that makes your plot/figure should be included in your report `.Rmd` file, but should not be shown in your final report. To accomplish this, you can use an `echo=FALSE` argument in the code chunk that produces the plot/figure.
+
+## Data wrangling {-}
+To answer your research question, you will have to clean, tidy, and structure the data (A.K.A. wrangle). 
+
+- The code to wrangle data should be included with your deliverable somehow. If you choose to include it in your report `.Rmd` file, then it should not be shown in the PDF of your final report. To accomplish this, you can use an `echo=FALSE` argument for the code chunk that does the wrangling. 
+  - A better practice -- not strictly necessary for this lab -- would be to write a function that loads and cleans *all* of the data that is being used by your team for its reports. This way, a single function can be run (and evaluated by your reader) for all the loading, cleaning, and manipulating. 
+- While we do not want to prohibit you from using additional tools for data manipulation, you should be able to complete this lab with no more than the base `stats` library, plus `dplyr` and `ggplot2` for data manipulation and plotting. Other tools within the tidyverse are available to use, but don't feel like you have to search them out. 
+- You will learn more by writing your own function than you would searching for a package that does one thing for your report.
+
+>sdsfsfsfd
+
+## Hypothesis testing {-}
+To answer your research question, you will have to execute one of the statistical tests from the course.
+
+- The code that executes your test *should* be shown in your report, because it makes very clear the specific test that you're conducting.
+- You need to argue, from the statistical principles of the course, why the test you are conducting is the *most appropriate* way to answer the research question. 
+- Although you might not do this for a report at your organization, for this class please list every assumption from your test, and evaluate it (assess whether the assumption is a reasonable reflection of the natural process that generated the data).
+- If you identify problems with some assumptions for your test, that does not mean that you should abandon the analysis or hide the problem. If these "limitations" exist, please describe them honestly, and provide your interpretation of the consequences for your test.
+- While you can choose to display the results of your test in the report, you also *certainly* need to write about these results. This should be accomplished using [inline code chunks](https://bookdown.org/yihui/rmarkdown-cookbook/r-code.html), rather than by hard-coding / hard-writing output into your written report. An example of this is included in `lab_1_example_solution.Rmd`. 
+
+## Test, results and interpretation {-}
+
+Please discuss whether any statistically significant results that you find are of *practical significance*. There are many ways to do this, but the best will provide your reader enough context to understand any measured differences in a scale appropriate to your variables. Explain the main takeaway of your analysis and how it relates to the broader context you identified in the introduction. 
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
