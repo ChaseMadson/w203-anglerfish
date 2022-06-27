@@ -15,6 +15,7 @@ output:
 \newpage
 \setcounter{page}{1}
 ```
+
 ```{r Setup, include=FALSE}
 library(tidyverse)
 library(janitor)
@@ -133,6 +134,7 @@ $$
 
 3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2)$
 
+
 For the results of a t-test on some sample to be reliable, then each draw from the sample must come from an underlying random variable that is **metric** in scale. As the preference statements in this survey are each measured on a 5-point Likert-scale, we know that this assumption is violated.
 
 Running a paired t-test on Likert-scale data means calculating the test statistic $t=\frac{\bar{X}-\mu_0}{s/\sqrt{n}}$, which gives us the difference from the mean in units of standard deviation. These units lose their meaning when calculated using Likert-scale data; it doesn't make sense to subtract or take a mean of these values. This is because data from Likert-scale have **non-standard intervals**, are **categorical instead of** **continuous**, and have **incomparable** **magnitudes** as values are subjective to each customer in the sample (a "very good" from one person can mean something different than another person's "very good"). Therefore, our interpretation of the test statistic would be invalid and so would be any conclusions we draw from it.
@@ -142,6 +144,7 @@ Running a paired t-test on Likert-scale data means calculating the test statisti
 > **Question**: *What would you propose to do to remedy this problem?*
 
 Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently.
+
 
 The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling).
 
@@ -186,6 +189,7 @@ happiness_WHR %>%
 
 ```
 
+
 **Assumptions for the Two-Sample t-Test**: In order to get reliable results from this test, there are 3 assumptions that must be met.
 
 1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **metric** in scale.
@@ -204,6 +208,7 @@ happiness_WHR %>%
 
     ```{r}
     happiness_WHR %>%
+
       summarise(pct_distinct_life_ladder = 
                   percent(n_distinct(life_ladder) / n(), 0.1))
       
@@ -225,6 +230,7 @@ happiness_WHR %>%
       slice(1:5)
 
     ```
+
 
     -   Another reason to doubt the independence of these samples is that **some groups of countries could be correlated based on geographic cluster**. For example, we can select a few European and South American countries and then compare their average life_ladder to see what may be a significant difference in averages.
 
@@ -263,6 +269,7 @@ happiness_WHR %>%
       facet_wrap(~above_average_gpd)
 
     ```
+
 
     -   However, the data is ordinal so sample size does not matter; the CLT cannot be applied.
 
