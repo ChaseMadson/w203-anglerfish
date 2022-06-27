@@ -6,11 +6,23 @@ output:
   pdf_document:
     toc: true
     toc_depth: 3
+    df_print: kable
+    fig_width: 4
+    fig_height: 3
 ---
 
+```{=tex}
+\newpage
+\setcounter{page}{1}
+```
 ```{r Setup, include=FALSE}
 library(tidyverse)
 library(janitor)
+library(lubridate)
+library(wooldridge)
+library(scales)
+
+knitr::opts_chunk$set(echo=FALSE, message=FALSE)
 
 ```
 
@@ -113,19 +125,17 @@ $$
 
 > **Question**: *If you were to run a paired t-test using this data, what consequences would the violation of the metric scale assumption have for your interpretation of the test results?*
 
-For the results of a t-test on some sample to be reliable, then each draw from the sample must come from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric. As the preference statements in this survey are each measured on a 5-point Likert-scale, we know that this assumption is violated.
-
-Running a paired t-test on Likert-scale data means calculating the test statistic $t=\frac{\bar{X}-\mu_0}{s/\sqrt{n}}$, which gives us the difference from the mean in units of standard deviation. These units lose their meaning when calculated using Likert-scale data; it doesn't make sense to subtract or take a mean of these values. This is because data from Likert-scale have **non-standard intervals**, are **categorical instead of** **continuous**, and have **incomparable** **magnitudes** as values are subjective to each customer in the sample (a "very good" from one person can mean something different than another person's "very good"). Therefore, our interpretation of the test statistic would be invalid and so would be any conclusions we draw from it.
-
-*Optional Supplement to our Response*
-
 > **Assumptions**: In order to run a paired t-test on some sample $\{X_i\}_{i=1}^n$ and receive reliable results, there are 3 assumptions that must be met.
 
-1.  Each $X_i$ comes from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric.
+1.  Each $X_i$ comes from an underlying random variable that is **metric** in scale.
 
 2.  $\{X_i\}_{i=1}^n$ is an **independent and identically distributed** random sample.
 
 3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2)$
+
+For the results of a t-test on some sample to be reliable, then each draw from the sample must come from an underlying random variable that is **metric** in scale. As the preference statements in this survey are each measured on a 5-point Likert-scale, we know that this assumption is violated.
+
+Running a paired t-test on Likert-scale data means calculating the test statistic $t=\frac{\bar{X}-\mu_0}{s/\sqrt{n}}$, which gives us the difference from the mean in units of standard deviation. These units lose their meaning when calculated using Likert-scale data; it doesn't make sense to subtract or take a mean of these values. This is because data from Likert-scale have **non-standard intervals**, are **categorical instead of** **continuous**, and have **incomparable** **magnitudes** as values are subjective to each customer in the sample (a "very good" from one person can mean something different than another person's "very good"). Therefore, our interpretation of the test statistic would be invalid and so would be any conclusions we draw from it.
 
 ## 1.2.2 Remedial Measure
 
@@ -134,8 +144,6 @@ Running a paired t-test on Likert-scale data means calculating the test statisti
 Since Likert-scale data contains paired values that are non-metric, it is better to use a **hypothesis of comparisons under the Wilcoxon Rank-Sum Test**. If we want to compare Likert-scale responses about customers' sentiment about our regular website (X) and our mobile website (Y), we would want to test the null hypothesis that $H_0: P(X < Y)= P(X > Y)$, meaning equal likelihood. If the evidence suggests that we can reject this null hypothesis, then we can provide a useful conclusion to our organization about how our customers view these websites differently.
 
 The assumptions required under this test are that the data must follow an ordinal scale (which Likert-scale does) and that each pair is drawn from the same distribution (which the organization can accomplish through random sampling).
-
-*Do we want to propose converting the data from Likert-scale to binary?*
 
 \newpage
 
@@ -147,9 +155,13 @@ The assumptions required under this test are that the data must follow an ordina
 
 > **Instructions**: *List all assumptions for a **two-sample t-test**. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.*
 
-Our data comes from the [World Happiness Report](https://worldhappiness.report/archive/) taken between 2019-2020 for a sample of countries, and specifically we are interested in the Cantril Life Ladder and GDP fields.
+Let $\{X_i\}_{i\in[1, 105]}$ represent the 105 *life_ladder* observations for **below average** GDP countries in the sample, giving us $\bar{X} = 4.924581$.
 
-```{r}
+Let $\{Y_i\}_{i\in[1, 121]}$ represent the 121 *life_ladder* observations for **above average** GDP countries in the sample, giving us $\bar{Y} = 6.355488$.
+
+We want to consider running a Welch's two-sample t-test that compares the mean of sample $\bar{X}$ against $\bar{Y}$.
+
+```{r, fig.align = 'center'}
 happiness_WHR <- 
   'happiness_WHR.csv' %>% 
   read_csv(col_types = 'ciddddddddd') %>% 
@@ -168,21 +180,15 @@ happiness_WHR %>%
 happiness_WHR %>%
   ggplot(mapping = aes(x = above_average_gpd, y = life_ladder)) + 
   geom_boxplot() + 
-  labs(title = 'Box-Plots Comparing Above and Below Average GDP Countries', 
+  labs(title = 'Country Life Ladder Scores by GDP', 
        x = '',
        y = 'Life Ladder Scale')
 
 ```
 
-Let $\{X_i\}_{i\in[1, 105]}$ represent the 105 *life_ladder* observations for **below average** GDP countries in the sample, giving us $\bar{X} = 4.924581$.
+**Assumptions for the Two-Sample t-Test**: In order to get reliable results from this test, there are 3 assumptions that must be met.
 
-Let $\{Y_i\}_{i\in[1, 121]}$ represent the 121 *life_ladder* observations for **above average** GDP countries in the sample, giving us $\bar{Y} = 6.355488$.
-
-We want to consider running a Welch's two-sample t-test that compares the mean of sample $\bar{X}$ against $\bar{Y}$.
-
-**Assumptions**: In order to get reliable results from this test, there are 3 assumptions that must be met.
-
-1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **metric** in scale, meaning they are continuous and numeric.
+1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **metric** in scale.
 
     -   From the summary table below, we see that life_ladder is precise to the third decimal point, and thus does not consist of whole-numbered values. This is characteristic for continuous variables.
         -   Note: The life_ladder variable we see in the data appears to be averages of Cantril ladder responses aggregated to the country-level.
@@ -198,14 +204,14 @@ We want to consider running a Welch's two-sample t-test that compares the mean o
 
     ```{r}
     happiness_WHR %>%
-      summarise(pct_distinct_life_ladder = (n_distinct(life_ladder) / n()) %>% 
-                                              scales::percent(0.1))
-
+      summarise(pct_distinct_life_ladder = 
+                  percent(n_distinct(life_ladder) / n(), 0.1))
+      
     ```
 
-    -   However, we note that individual Cantril ladder responses are based on subjective 11-point scale. Though the respondants are asked to imagine fixed-interval spacing between each step of the ladder, it is not clear that this satisfactorily approximates the standard interval requirement of metric scales. Even though we are working with country-level averages, we conclude that **the life_ladder variable does not meet the metric scale requirement** since the distance between each scalar value cannot be linearly measured.
+    -   However, we note that individual Cantril ladder responses are based on subjective 11-point scale. Though the respondents are asked to imagine fixed-interval spacing between each step of the ladder, it is not clear that this satisfactorily approximates the standard interval requirement of metric scales. Even though we are working with country-level averages, we conclude that **the life_ladder variable does not meet the metric scale requirement** since the distance between each scalar value cannot be linearly measured.
 
-![Cantril Scale Visualized. Source: Sawatzky et al. (e.g., 2010), http://www.hqlo.com/content/8/1/17](cantril_ladder.png)
+![Cantril Scale Visualized. Source: Sawatzky et al. (e.g., 2010), <http://www.hqlo.com/content/8/1/17>](cantril_ladder.png)
 
 2.  $\{X_i\}_{i\in[1, 105]}$ and $\{Y_i\}_{i\in[1, 121]}$ are **independent and identically distributed** random samples.
 
@@ -219,8 +225,9 @@ We want to consider running a Welch's two-sample t-test that compares the mean o
       slice(1:5)
 
     ```
-    -   Another reason to doubt the independence of these samples is that **some groups of countries could be correlated based on geographic cluster**. For example, we can select a few European and South American countries and then compare their average life_ladder to see what may be a significant difference in averages. 
-    
+
+    -   Another reason to doubt the independence of these samples is that **some groups of countries could be correlated based on geographic cluster**. For example, we can select a few European and South American countries and then compare their average life_ladder to see what may be a significant difference in averages.
+
     ```{r}
     happiness_WHR %>% 
       mutate(continent = 
@@ -233,19 +240,18 @@ We want to consider running a Welch's two-sample t-test that compares the mean o
       filter(!is.na(continent)) %>% 
       group_by(continent) %>% 
       summarise(mean(life_ladder))
-    
+
     ```
-    
-    
+
     -   As the data is ordinal and not metric, the CLT does not apply and there is not an obvious way to compare distributions from the variables to confirm whether they are identically distributed.
 
-3.  $\{X_i\}_{i\in[1, 105]}$ and $\{Y_i\}_{i\in[1, 121]}$ are **normally distributed**, or the sample size is large enough to approximate normality due to the CLT (assuming no severe skewness). 
+3.  $\{X_i\}_{i\in[1, 105]}$ and $\{Y_i\}_{i\in[1, 121]}$ are **normally distributed**, or the sample size is large enough to approximate normality due to the CLT (assuming no severe skewness).
 
-    -   We more than satisfy the $n>30$ rule-of-thumb for minimum sample size. 
-    
-    -   The raw distributions of life_ladder within each group show no noticeable deviations from normality.   
+    -   We more than satisfy the $n>30$ rule-of-thumb for minimum sample size.
 
-    ```{r}
+    -   The raw distributions of life_ladder within each group show no noticeable deviations from normality.
+
+    ```{r, fig.align='center'}
     happiness_WHR %>%
       filter(!is.na(above_average_gpd)) %>% 
       ggplot(mapping = aes(x = life_ladder)) + 
@@ -258,8 +264,8 @@ We want to consider running a Welch's two-sample t-test that compares the mean o
 
     ```
 
-    -   However, the data is ordinal so sample size does not matter; the CLT cannot be applied. 
-    
+    -   However, the data is ordinal so sample size does not matter; the CLT cannot be applied.
+
 Additionally, data used for two-sample t-tests should:
 
 -   Have a grouping variable that is defined and present. In this case, the grouping variable is GDP (low GDP and high GDP) so this condition is met.
@@ -270,34 +276,256 @@ Additionally, data used for two-sample t-tests should:
 
 ## 1.3.2 Legislators
 
-```{r}
-2 + 2
+> **Instructions**: *List all assumptions for a **Wilcoxon rank-sum test (using the Hypothesis of Comparisons)**. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.*
+
+Let $\{X_i\}_{i\in[1, 272]}$ represent the 272 Democratic legislators in the data, giving us $\bar{X} = 61.76656$.
+
+Let $\{Y_i\}_{i\in[1, 264]}$ represent the 264 Republican legislators in the data, giving us $\bar{Y} = 59.18111$.
+
+We want to consider running a Wilcoxon rank-sum test using the hypothesis of comparisons to $H_0: P(X > Y) = P(X < Y)$.
+
+```{r, fig.align='center'}
+legislators <- 
+  'legislators-current.csv' %>% 
+  read_csv(col_types = 'ccccccDcccddcccccccccccccccccccccc') %>% 
+  filter(party %in% c('Democrat', 'Republican')) %>% 
+  arrange(desc(type), last_name) %>% 
+  transmute(full_name, 
+            party = party %>% 
+              factor(levels = c('Democrat', 'Republican')), 
+            is_senator = type == 'sen',
+            current_age_in_years = 
+              birthday %>% 
+              interval(today()) %>% 
+              as.numeric('years'), 
+            state, gender)
+
+legislators %>% 
+  group_by(party) %>% 
+  summarise(mean_age = mean(current_age_in_years), 
+            observations = n())
+
+legislators %>%
+  ggplot(mapping = aes(x = party, y = current_age_in_years)) + 
+  geom_boxplot() + 
+  labs(title = 'Legislator Age by Political Party', 
+       x = '',
+       y = 'Current Age')
+
 ```
+
+**Assumptions for the Wilcoxon Rank-Sum Test (Hypothesis of Comparisons)**: In order to get reliable results from this test, there are 2 assumptions that must be met.
+
+1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **ordinal** in scale.
+
+    -   From the summary table below, we see that current_age_in_years is precise to the day and is characteristic of a continuous variable. Being continuous, we are able to use more restrictive alternative t-tests if we want. But a variable being continuous does not violate this assumption since continous variables have the requisite property of being ordered. Hence this requirement is met.
+
+    ```{r}
+    legislators %>%
+      pull(current_age_in_years) %>% 
+      summary()
+      
+    ```
+
+2.  Each $X_i$ is drawn from the same distribution, each $Y_i$ is drawn from the same distribution, and all $X_i$ and $Y_i$ are mutually independent.
+
+    -   Each $X_i$ is drawn from the Democratic party and each $Y_i$ is drawn from the Republican party. While the ages of the representatives may be independent of each other, we do not believe that the political parties of the representatives are independent of each other. That is to say, if there are two senators from the same state, there is likely some covariance between their political parties. This then likely invalidates the assumption that the pairs too are independent. The table below shows that only a quarter of states have between 25% and 75% of representatives from the same party; most states have a strong preference for one party over the other. **Thus, this assumption may not be adequately met**.
+
+    ```{r}
+    legislators %>% 
+      group_by(state) %>% 
+      summarise(pct_dem = (sum(party == "Democrat") / n()), legislators = n()) %>%
+      arrange(desc(pct_dem)) %>%
+      summarise(sum(pct_dem > 0.25 & pct_dem < 0.75) / n())
+      
+    ```
+
+    -   The sample data is a snapshot of the current Democrat and Republican legislators, and how each Democrat and Republican senator is elected may change through time.
+
+Additionally, data used for Wilcoxon Rank-Sum Tests (Hypothesis of Comparisons) should:
+
+-   Have a grouping variable that is defined and present. In this case, the grouping variable is the political party (Democrat and Republican).
+
+-   Not have substantial differences in group sample sizes. While the number of Congressmen/women/representatives are not exactly equal based on the two main political parties, they are extremely close and therefore there are no substantial differences in group sample sizes.
+
+    ```{r}
+    legislators %>%
+      group_by(gender) %>% 
+      summarise(legislators = n(), mean_age = mean(current_age_in_years))
+
+    ```
+
+-   Not have too many ties. As shown below we see less than 5% of legislators share a birthday, and so this assumption is met.
+
+    ```{r}
+    legislators %>%
+      summarise(pct_distinct_age = 
+                  percent(n_distinct(current_age_in_years) / n(), 0.1))
+
+    ```
 
 \newpage
 
 ## 1.3.3 Wine and Health
 
-```{r}
-2 + 2
+> **Instructions**: *List all assumptions for a **signed-rank test**. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.*
+
+Let $\{X_i\}_{i\in[1, 21]}$ represent the rate of heart disease deaths per 100,000 citizens for 21 countries, giving us $\bar{X} = 183.28571$.
+
+Let $\{Y_i\}_{i\in[1, 21]}$ represent the rate of liver disease deaths per 100,000 citizens for 21 countries, giving us $\bar{Y} = 21.03333$.
+
+We want to consider running a Wilcoxon signed-rank test using the hypothesis of no difference $H_0: \mu=0$.
+
+```{r, fig.align='center'}
+wine_and_health <- 
+  wine %>% 
+  transmute(country, heart = heart %>% as.double, liver) %>% 
+  pivot_longer(-country, 
+               names_to = 'disease_type', 
+               values_to = 'deaths_per_100k')
+  
+wine_and_health %>% 
+  group_by(disease_type) %>% 
+  summarise(mean_deaths = mean(deaths_per_100k), 
+            observations = n())
+
+wine_and_health %>%
+  ggplot(mapping = aes(x = disease_type, y = deaths_per_100k)) + 
+  geom_boxplot() + 
+  labs(title = 'Death Rates of Heart Disease and Liver Disease', 
+       x = 'Disease Type',
+       y = 'Deaths per 100,000 Residents')
+
 ```
+
+**Assumptions for the Wilcoxon Signed-Rank Test**: In order to get reliable results from this test, there are 3 assumptions that must be met.
+
+1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **metric** in scale, especially since the operation of subtraction imposes a metric structure.
+
+    -   The rate of deaths by disease is a ratio of two count numbers, resulting in a discrete metric scale variable. Their differences, means, and variances can be meaningfully computed and interpreted. The difference between 5 and 6 deaths is the same as between 10 and 11, for example. Also, heart and liver diseases diagnosis have well established standards which countries listed in the dataset share. Thus we consider this assumption to be met.
+
+
+2.  Each pair $(X_i,Y_i)$ is drawn from the same distribution, independently of all other pairs.
+
+    -   We might doubt the independence of these samples considering that **some groups of countries could be correlated based on geographic cluster**. Certainly, the cultural norms surrounding alcohol consumption are more prevalent some countries more than others. 
+    
+    
+    -   For example, when we group countries by general region and compare their average mean_deaths_per_100k, we see enough difference in averages to doubt the independence of the sample. Importantly, no counties from South America or Africa were sampled, and very few were sampled from Asia. Thus, this assumption is not met.
+
+    ```{r}
+    wine_and_health %>% 
+      mutate(region = 
+               case_when(country %in%
+                           c('France', 'Spain', 'Italy') ~ 'Central EU',
+                         country %in% 
+                           c('Australia', 'New Zealand') ~ 'Oceania',
+                         country %in%
+                           c('Finland', 'Sweden', 'Norway') ~ 'North EU', 
+                         country %in% 
+                           c('UK', 'Ireland', 'Iceland') ~ 'Atlantic',
+                         country %in% 
+                           c('US', 'Canada') ~ 'Americas', 
+                         TRUE ~ 'Other Region')) %>%
+      group_by(region, disease_type) %>% 
+      summarise(countries = n(), 
+                mean_deaths_per_100k = mean(deaths_per_100k), 
+                .groups = 'drop') %>%
+      pivot_wider(names_from = disease_type, 
+                  values_from = mean_deaths_per_100k) %>% 
+      arrange(desc(heart))
+      
+    ```
+
+3.  The difference between pairs $X-Y$ follows a symmetric distribution with mean $\mu$.
+
+    -   Graphing distribution of $X-Y$ on a histogram, we see a concerningly heavy right-tail that could disturb our assumption of normality. This difference is not symmetric about some mean $\mu$. 
+
+    ```{r, fig.align='center'}
+    wine_and_health %>%
+      pivot_wider(names_from = disease_type, values_from = deaths_per_100k) %>% 
+      mutate(diff_heart_liver = heart - liver) %>% 
+      ggplot(mapping = aes(x = diff_heart_liver)) + 
+      geom_histogram(bins = 7) + 
+      labs(title = 'Difference between Heart and Liver Deaths', 
+           x = 'Heart Death Rate minus Liver Death Rate', 
+           y = 'Countries')
+
+    ```
+
+    -   Because the sample size of our data is just 21 countries, we have not met the minimum $n \geq 30$ to rely on $\mu$ approximating normal due to the CLT. Therefore, this assumption does not hold true.
+
+    -   Additionally, data used for Wilcoxon Signed-Rank Tests should not have too many ties. As shown below we see less than 10% of countries have the exact rates, and so this assumption is met.
+
+    ```{r}
+    wine_and_health %>%
+      group_by(disease_type) %>% 
+      summarise(pct_distinct_rates = percent(n_distinct(deaths_per_100k) / n(), 0.1))
+
+    ```
 
 \newpage
 
 ## 1.3.4 Attitudes Toward the Religious
 
-```{r}
-2 + 2
+> **Instructions**: *List all assumptions for a **paired t-test**. Then evaluate each assumption, presenting evidence based on your background knowledge, visualizations, and numerical summaries.*
+
+Let $\{X_i\}_{i\in[1, 21]}$ represent the rate of heart disease deaths per 100,000 citizens for 21 countries, giving us $\bar{X} = 183.28571$.
+
+Let $\{Y_i\}_{i\in[1, 21]}$ represent the rate of liver disease deaths per 100,000 citizens for 21 countries, giving us $\bar{Y} = 21.03333$.
+
+We want to consider running a Wilcoxon signed-rank test using the hypothesis of no difference $H_0: \mu=0$.
+
+```{r, fig.align='center'}
+GSS_religion <- 
+  'GSS_religion.csv' %>% 
+  read_csv(col_types = 'iiiii') %>% 
+  select(Protestant = 4, Catholic = 5) %>% 
+  pivot_longer(everything(), names_to = 'religion', values_to = 'temperature')
+  
+GSS_religion %>% 
+  group_by(religion) %>% 
+  summarise(mean_temp = mean(temperature), 
+            observations = n())
+
+GSS_religion %>%
+  ggplot(mapping = aes(x = religion, y = temperature)) + 
+  geom_boxplot() + 
+  labs(title = 'Attitudes Towards Catholics and Protestants', 
+       x = '',
+       y = 'Feeling Themometer Rating')
+
 ```
 
-> **Assumptions**: In order to run a paired t-test on some sample $\{X_i\}_{i=1}^n$ and receive reliable results, there are 3 assumptions that must be met.
+**Assumptions for a Paired t-Test**: In order to get reliable results from this test, there are 3 assumptions that must be met.
 
-1.  Each $X_i$ comes from an underlying random variable that is **metric** in scale, meaning they are continuous and numeric.
+1.  Each $X_i$ and $Y_i$ comes from underlying random variables that are **metric** in scale.
 
-2.  $\{X_i\}_{i=1}^n$ is an **independent and identically distributed** random sample.
+    -   We see below that we observe duplicate values in less than 2% of the responses, and the top 5 most popular responses accounted for 82% of the data. Effectively, this approximates something like a 5- or 10-point Likert scale, which is ordinal but not continuous. While the researchers may have wanted to appromixate continuous data by provinding such precision, it appears that respondents are prone to rounding to the nearest tenth, fifth, or half of 100, with few respondents making use of the full precision. 
 
-3.  $\{X_i\}_{i=1}^n$ is **normally distributed**, or $\{X_i\}_{i=1}^n \sim N(\mu_x, \sigma_x^2$
+    ```{r}
+    GSS_religion %>%
+      summarise(pct_distinct_temperature = 
+                  percent(n_distinct(temperature) / n(), 0.1))
+      
+    GSS_religion %>% 
+      group_by(temperature) %>% 
+      tally %>% 
+      arrange(desc(n)) %>% 
+      mutate(proportion_of_responses = percent(n / sum(n), 0.1)) %>% 
+      select(-n) %>% 
+      slice_head(n = 5)
+    
+    ```
 
-    -   With sufficiently large n (e.g., surveying at least 30 customers), this assumption is met asymptotically since the Central Limit Theorem will cause a normal distribution of the mean.
+    -   Again, we note that individual responses are based on **subjective scale** with **non-standard intervals**. Though the respondants are asked to rate groups using the feeling thermometer with presumed fixed-interval spacing between each point, it is not clear that this satisfactorily approximates the standard interval requirement of metric scales. It would not make sense to calculate the mean and variance, which would make this test unviable. We conclude that **the temperature variable does not meet the metric scale requirement** since the distance between each scalar value cannot be linearly measured.
 
-> **Violations**:
+2.  Each pair $(X_i, Y_i)$ is **drawn from the same distribution, independently of all other pairs (i.i.d.)**.
+
+    -   According to the study owners (NORC)[https://gss.norc.org/About-The-GSS], "the General Social Survey (GSS) is a nationally representative survey of adults in the United States..." and provides no specific detail on how their samples are drawn beyond that. Taking them at face value, their study being nationally representative suggests their data was either conducted without sampling bias or that existing sampling bias is mitigated before analysis. **We don't have enough information to evaluate whether this data was i.i.d.**
+
+    -   Some reason to **doubt** the independence of the sampling is that the proximity to a place of religious worship and the general region within the United States of the individuals responding to the survey would likely impact their responses. 
+
+
+3.  The difference between measurements has no major deviations from normality, considering sample size. 
+
+    -   As this data is not metric, **CLT cannot be applied** and **this does not hold**.
