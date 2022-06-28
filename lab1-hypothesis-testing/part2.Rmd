@@ -1,5 +1,315 @@
 ---
+title: ""
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    number_sections: true
+    df_print: kable
 ---
+
+```{=tex}
+\newpage
+\setcounter{page}{1}
+```
+
+```{r Setup, include=FALSE}
+library(tidyverse) 
+library(magrittr)
+library(scales)
+library(gridExtra)
+library(broom)
+
+theme_set(theme_bw())
+
+knitr::opts_chunk$set(echo=FALSE, message=FALSE)
+
+```
+
+```{r load clean and subset, warning=FALSE}
+
+# Dimensional table to decode reasons given for not voting
+
+dim_nonvoter_reasons <-
+  tibble(
+    V202123 = c(1:16, -5:-9, -1),
+    Reason = case_when(
+      V202123 == 1 ~ 'I forgot',
+      V202123 == 2 ~ 'I am not interested',
+      V202123 == 3 ~ 'Too busy',
+      V202123 == 4 ~ 'Did not like the candidates',
+      V202123 == 5 ~ 'I am not registered',
+      V202123 == 6 ~ 'I did not have the correct form of ID',
+      V202123 == 7 ~ 'Out of town',
+      V202123 == 8 ~ 'Sick or disabled',
+      V202123 == 9 ~ 'Transportation',
+      V202123 == 10 ~ 'Bad weather',
+      V202123 == 11 ~ 'The line at the polls was too long',
+      V202123 == 12 ~ "Wasn't allowed to vote at the polls",
+      V202123 == 13 ~ "Requested but didn't get absentee ballot",
+      V202123 == 14 ~ "Requested but didn't get absentee ballot",
+      V202123 == 15 ~ "Requested but didn't get absentee ballot",
+      V202123 == 16 ~ "Requested but didn't get absentee ballot",
+      V202123 == -1 ~ ' Inapplicable',
+      V202123 == -5 ~ '  Interview breakoff',
+      V202123 == -6 ~ ' No post-election interview',
+      V202123 == -7 ~ ' No post-election data, deleted',
+      V202123 == -8 ~ ' Dont know',
+      V202123 == -9 ~ ' Refused'))
+
+# Read in data
+anes <- 
+  read_csv(unz('anes_timeseries_2020_csv_20220210.zip',
+               'anes_timeseries_2020_csv_20220210.csv')) %>% 
+  
+  transmute(
+    # Select classification for voter and non-voter
+    Voter = case_when(V202109x == 1 ~ 'voted' ,
+                      V202109x == 0 ~ 'not voted'),
+    
+    # Create a classification for voter's party (either D or R)
+    Party = case_when(V201228 == 1 ~ 'Democrat' ,
+                      V201228 == 2 ~ 'Republican',
+                      !V201228 %in% 1:2 & V201230 == 1 ~ 'Republican',
+                      !V201228 %in% 1:2 & V201230 == 3 ~ 'Democrat'),
+
+    # Select classification for difficulty voting
+    Difficulty = V202119, 
+    
+    # Select reason given for not voting
+    V202123
+    ) %>%
+  
+  # Decode reason given for not voting
+  left_join(dim_nonvoter_reasons, by = 'V202123') %>% 
+  
+  filter(
+    # Filter out respondents who we don't know whether voted
+    Voter %in% c('voted', 'not voted'),
+  
+    # Filter down to voters who fall under our classification of D or R
+    Party %in% c('Democrat', 'Republican'))
+
+# Filter down to valid responses to difficulty question
+df1_Voted_NotVoted <-
+  anes %>%
+  filter(Difficulty %in% 1:5)
+  
+# Filter down to "not voted" voters and their reasons given
+df1_Voted_NotVoted_new <- 
+  anes %>%
+  filter(Voter == 'not voted', 
+         V202123 %in% c(1:16, -5:-9, -1))
+
+```
+
+
+# Importance and Context
+
+The voting process should be simple, convenient and fair for everyone. However, millions of Americans experience hurdles such as restrictive voting times and long lines at their designated polling location. The 2020 election was conducted in the midst of the Covid-19 pandemic, creating a scenario where voting difficulties could be considerably more prominent due to state and local laws and guidelines. To combat this, states implemented measures such as early voting and mail-in ballots for all voters.  According to the U.S. Census, the 2020 election had higher turnout than 2016 and 69% of voters nationwide cast their ballots non traditionally. Following the election, states reexamined the existing election rules and procedures as well as the new voting measures that were encouraged during the pandemic, evaluating what should be permitted in future elections. As a result, some states have changed or reverted back to more stringent rules and have again restricted access to mail-in ballots, which may impact the difficulties voters face during elections.
+
+Our consulting firm, Anglerfish, was tasked by the Coalition of Fair Voting with analyzing the 2020 election survey data published by electionstudies.org to answer the question: **Did the Democratic voters or Republican voters experience more difficulty voting in the 2020 election?** This question provides context around voting difficulties down party lines and may inform future voter policy. It may also serve as a tool to better understand the ongoing political party stances on expanding voting options. Our analysis will serve as a baseline for the next general election and may identify factors of difficulty that future research could build on to improve the voting process and increase voter turnout. 
+
+# Data and Methodology
+
+Our analysis utilizes data from the 2020 American National Election Studies (ANES)\footnote{American National Election Studies. 2021. ANES 2020 Time Series Study Full Release [dataset and documentation]. July 19, 2021 version. www.electionstudies.org}. The ANES time series study continues the series of election studies conducted since 1948 to support public opinion and voting behavior analysis in U.S. presidential elections. Participants from the study are nationally representative and restricted to those who have a physical mailing address, are U.S. citizens, are not institutionalized, and are 18 years or older. Therefore, we assert that all participants are potential voters and will be defined as such for our study. The study from 2020 yielded 8,280 election surveys and interviews. There are four main columns from the data utilized in our analysis, which are described below. 
+
+We first turned to the summary voter turnout field, V202109x in the ANES study. From this field, we included the self-reported responses of “voted” (6,450) and “did not vote” (1,039) and filtered out the response “not reported” (791). We will use the term “non-voters” to refer to eligible individuals that did not vote henceforth. After filtering out these two responses, the original dataset was reduced from 8,280 rows to 7,489 rows. We recognize that respondents may feel pressured to report that they voted and this may add slight biases in the dataset, potentially impacting our analysis. Of note, eliminating the “not reported” responses won't cause a potential misrepresentation of the full scale of voter difficulty. 
+
+In terms of political party affiliation, we used questions V201288 and V201230 to differentiate Republican voters and Democratic voters. The former asks “Do you think of yourself as Democrat, Republican, or Independent?”. If the response is not “Democrat” or “Republican” then we use question V201230 which asks, “Do you think of yourself as closer to the Republican Party or to the Democratic Party?”. Any response of “closer to Republican” was counted as a Republican and “closer to Democratic” will be counted as a Democrat. After putting above two political party affiliation filters, the dataset was reduced from 7,489 rows to 6,595 rows.  The remaining 894 rows were dropped from the dataset because either the interviewee refused to answer or didn't know the answer, or there were technical errors in reporting answers. We chose to use this as our filter criteria for political party affiliation instead of party registration because peoples’ ideologies may change over time and there are barriers to changing party registration. By using a direct report from the individual at the time of the study we are able to classify them into the two political parties of interest at the time surrounding the vote. 
+
+The survey asked voters for the presence of 10 areas of difficulty, to include problems such as long wait lines and obtaining absentee ballots. For the purpose of this report, we congregated all difficulties through one column field, V202119, as our response variable. This column captures difficulty in a 5 point Likert scale ranging from 1 (”not difficult at all”) to 5 (“extremely difficult”). After applying the above difficulty filter our final dataset was reduced from 6,595 to 5,831 rows which excluded the non-voters automatically, therefore our Wilcoxon rank-sum test is only applied on data from interviewees that actually voted. We dropped 764 rows because either the interviewee refused to answer, data was deleted due to an incomplete interview, or there was no post-election interview. We are cognizant that the act of being asked if the voter experienced difficulty may inject biases and alter responses. For example, if an individual voted and didn’t notice any particular difficulty in voting, but was subsequently provided a list of reasons why it could have been difficult to vote, the suggestion may result in that individual reporting difficulty that they didn’t truly experience. 
+
+We further analyze why non-voters did not vote in the election by looking at question V202123, which asks “What is the main reason you did not vote?”. This is demonstrated in Fig 1, which shows the responses from non-voters of why they did not vote. A few response options align well with difficulties named by people who reported voting in the 2020 election, to include registration problems. 
+
+
+```{r, warning=FALSE}
+## Non-Voted People difficulty graphs
+
+
+plt_reasons <- 
+  df1_Voted_NotVoted_new %>% 
+  split(.$Party) %>% 
+  map(~ group_by(., V202123) %>%
+        summarise(voters = n(), .groups = 'drop') %>%
+        mutate(percent = voters / sum(voters)) %>%
+        right_join(dim_nonvoter_reasons, by = 'V202123') %>%
+        mutate_at(vars(voters:percent), replace_na, 0) %>% 
+        select(-V202123) %>% 
+        group_by(Reason) %>% 
+        summarise_all(sum)) %>%
+  bind_rows(.id = 'Party') %>% 
+  ggplot(mapping = aes(x = reorder(Reason, -percent), 
+                       y = percent, 
+                       fill = Party, 
+                       label = reorder(Reason, -percent))) + 
+  geom_col(position = 'dodge') +
+  labs(title = "% of 'Non-Voters' by Reasons for Not Voting ", 
+       x = "Respondent's Reasons", 
+       y = '% of Non-Voters facing difficulty') + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(), 
+        legend.position = '') + 
+  geom_text(aes(y = 0), angle = 90, hjust = -.05, size = 2) + 
+  scale_y_continuous(labels = percent)
+
+plt_difficulty <- 
+  df1_Voted_NotVoted %>% 
+  split(.$Party) %>% 
+  map(~ group_by(., Difficulty) %>%
+        summarise(voters = n(), .groups = 'drop') %>%
+        mutate(percent = voters / sum(voters))) %>%
+  bind_rows(.id = 'Party') %>% 
+  mutate(Difficulty = Difficulty %>% 
+           factor(labels =  
+                    c('Not difficult at all',
+                      'Little difficult',
+                      'Moderately difficult',
+                      'Very difficult',
+                      'Extremely difficult'))) %>% 
+  select(-voters) %>% 
+  ggplot(mapping = aes(x = Difficulty, 
+                       y = percent, 
+                       fill = Party)) + 
+  geom_col(position = 'dodge') + 
+  labs(x = "Respondent's Feelings", 
+       y = '% of Voters facing difficulty') + 
+  ggtitle("% of voters facing difficulty at each level for each party") + 
+  scale_y_continuous(labels = percent) + 
+  theme(axis.text.x = element_text(size = 9))
+
+
+grid.arrange(plt_reasons, plt_difficulty)
+
+```
+
+Fig 2 shows that over 89% of Republican voters and 88% of Democrat voters did not experience difficulty at all. Of those that experienced difficulty, the highest number of respondents from both voter groups reported that they experienced “a little difficulty.”  We selected party preference, a categorical variable, as our grouping variable and difficulty voting, a ranked-order ordinal variable, as our response variable. We conducted a Wilcoxon rank-sum test using the hypothesis of comparisons , which is the most appropriate way of testing this nonparametric data.  The null hypothesis can be phrased as follows: 
+
+Null hypothesis:  The probability of a Democrat’s difficulty value (D) being greater than a Republican's difficulty value (R) is equal to the probability of a Republican’s difficulty value (R) being greater than a Democrat’s difficulty value (D). We chose to run a two tailed hypothesis test, as we do not want to ignore a strong effect in either direction and wish to avoid underestimating the type I error rate. Our alternative hypothesis is that the probability of Democrat difficulty value being greater than Republican difficulty value is not equal to probability of Democrats difficulty value being less than Republican difficulty value.  
+
+**Hypotheses**: $H_0:Pr(D>R) = Pr(D<R)$ vs. $H_a:Pr(D>R)$ *does not equal* $Pr(D<R)$
+
+There are two assumptions when conducting the Wilcox rank-sum test. The first is that the data must have at least an ordinal scale, which we have met because our response variable of difficulty is reported in a Likert scale. The second assumption is that the data are independent and identically distributed (i.i.d.). The ANES data sampled from a random group of mailing addresses nationwide, avoiding the pitfalls of clustering while still getting data representative of the total population of voters, as well as randomly assigning the type of survey assigned to each participant. Additionally, the individuals surveyed in 2020 came from the same distribution as people who were surveyed earlier and those who will be surveyed in the future for this time series study. Therefore, this assumption is also met. 
+
+
+# Results
+
+```{r}
+## Wilcox Test
+
+tidy(wilcox.test(df1_Voted_NotVoted$Difficulty~df1_Voted_NotVoted$Party))
+
+```
+
+
+From our statistical analysis, we found a p-value of  0.003 which is lesser than our predetermined alpha level of 0.05 . Hence, we have enough evidence to reject the null hypothesis. In absolute terms, Democrat voters had a 12% probability of experiencing some voting difficulty compared to 10% of Republican voters.  While practical significance is usually calculated in the presence of statistical significance, so we calculated the effect size . As this is the ordinal data we used the rank biserial correlation test with Spearman method. The Spearman coefficient (rho) value -0.013 suggests a weak correlation between grouping variable parties & difficulty. The p-value 0.0036 suggests that this Spearmen test is significant, so this weak correlation is a significant effect. We also computed a common language size effect of 0.51. This measure suggests a fairly strong effect size. This is useful information because it suggests that we may actually have a strong effect, but not enough data to detect it. Therefore, we may want to plan a future study with a larger sample size. 
+The study did yield statistically significant results; both voter groups experienced significant amounts of difficulty during the 2020 election. To further explore this phenomenon, we propose a follow-on study to analyze the list of detailed difficulties reported for the two voter groups. The individual tasks that fall under voting may produce more actionable results and help promote policy changes that increase accessibility to voting for individuals of both political parties.
+Although the distribution of values visually looks similar between the two parties, the magnitude of the difficulty would be something interesting to take into account when determining which party, if any, had more difficulty voting. However, a limitation of the Wilcoxon rank-sum test is that due to the type of data gathered by using a Likert scale, we are unable to conduct this analysis because the meaning behind the reported levels will vary between people. In other words, the data is not metric.
+
+# Discussion
+
+This study found a significant difference between the level of voting difficulty experienced by Democrat and Republican voters. Although the difference was not practically significant to be statistically significant, given the large sample size of the study, the information may still be of value to policy makers. This information can be used to advocate for change in voter policy, and help a bipartisan effort. In such a divided political climate in the United States, we hope our analysis helps establish voting equity so that no particular group of voters are unfairly discouraged from voting.
+
+# Appendix
+
+## Preparing the Data
+
+```{r, echo=TRUE, eval=FALSE}
+
+# Dimensional table to decode reasons given for not voting
+
+dim_nonvoter_reasons <-
+  tibble(
+    V202123 = c(1:16, -5:-9, -1),
+    Reason = case_when(
+      V202123 == 1 ~ 'I forgot',
+      V202123 == 2 ~ 'I am not interested',
+      V202123 == 3 ~ 'Too busy',
+      V202123 == 4 ~ 'Did not like the candidates',
+      V202123 == 5 ~ 'I am not registered',
+      V202123 == 6 ~ 'I did not have the correct form of ID',
+      V202123 == 7 ~ 'Out of town',
+      V202123 == 8 ~ 'Sick or disabled',
+      V202123 == 9 ~ 'Transportation',
+      V202123 == 10 ~ 'Bad weather',
+      V202123 == 11 ~ 'The line at the polls was too long',
+      V202123 == 12 ~ "Wasn't allowed to vote at the polls",
+      V202123 == 13 ~ "Requested but didn't get absentee ballot",
+      V202123 == 14 ~ "Requested but didn't get absentee ballot",
+      V202123 == 15 ~ "Requested but didn't get absentee ballot",
+      V202123 == 16 ~ "Requested but didn't get absentee ballot",
+      V202123 == -1 ~ ' Inapplicable',
+      V202123 == -5 ~ '  Interview breakoff',
+      V202123 == -6 ~ ' No post-election interview',
+      V202123 == -7 ~ ' No post-election data, deleted',
+      V202123 == -8 ~ ' Dont know',
+      V202123 == -9 ~ ' Refused'))
+
+# Read in data
+anes <- 
+  read_csv(unz('anes_timeseries_2020_csv_20220210.zip',
+               'anes_timeseries_2020_csv_20220210.csv')) %>% 
+  
+  transmute(
+    # Select classification for voter and non-voter
+    Voter = case_when(V202109x == 1 ~ 'voted' ,
+                      V202109x == 0 ~ 'not voted'),
+    
+    # Create a classification for voter's party (either D or R)
+    Party = case_when(V201228 == 1 ~ 'Democrat' ,
+                      V201228 == 2 ~ 'Republican',
+                      !V201228 %in% 1:2 & V201230 == 1 ~ 'Republican',
+                      !V201228 %in% 1:2 & V201230 == 3 ~ 'Democrat'),
+
+    # Select classification for difficulty voting
+    Difficulty = V202119, 
+    
+    # Select reason given for not voting
+    V202123
+    ) %>%
+  
+  # Decode reason given for not voting
+  left_join(dim_nonvoter_reasons, by = 'V202123') %>% 
+  
+  filter(
+    # Filter out respondents who we don't know whether voted
+    Voter %in% c('voted', 'not voted'),
+  
+    # Filter down to voters who fall under our classification of D or R
+    Party %in% c('Democrat', 'Republican'))
+
+# Filter down to valid responses to difficulty question
+df1_Voted_NotVoted <-
+  anes %>%
+  filter(Difficulty %in% 1:5)
+  
+# Filter down to "not voted" voters and their reasons given
+df1_Voted_NotVoted_new <- 
+  anes %>%
+  filter(Voter == 'not voted', 
+         V202123 %in% c(1:16, -5:-9, -1))
+
+```
+
+## Practical significance through Biserial correlation test
+
+```{r, echo=TRUE, warning=FALSE}
+cor.test(df1_Voted_NotVoted$Difficulty,
+         as.numeric(as.factor(df1_Voted_NotVoted$Party)), 
+         method = 'spearman') %>% 
+  tidy()
+
+```
+
+## Practical significance through Common Language Effect Size
+
+```{r, echo=TRUE}
+CLE <-
+  df1_Voted_NotVoted %>% 
+  filter(!is.na(Difficulty)) %>% 
+  group_by(Party) %>% 
+  tally %>% 
+  pull(n) %>% 
+  prod
+
+4327437 / CLE
+
+```
